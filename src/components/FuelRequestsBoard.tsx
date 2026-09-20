@@ -27,7 +27,7 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
   return (
     <div className="flex-1 mx-auto p-6 w-full max-w-3xl">
       <header className="flex justify-between items-center mb-4">
-        <h1 className="font-semibold text-zinc-900 dark:text-zinc-50 text-lg">Fuel Requests</h1>
+        <h1 className="font-semibold text-zinc-900 dark:text-zinc-50 text-lg">Fueler Dashboard</h1>
         {error && <span className="text-red-600 dark:text-red-400 text-sm">Reconnecting…</span>}
       </header>
 
@@ -45,20 +45,20 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
           >
             <div className="flex justify-between items-center">
               <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                {request.RESOURCE.NAME} · {request.RESOURCE.MODEL}
+                {request.RESOURCE.NAME} ({request.RESOURCE.MODEL})
               </span>
               <span className="text-zinc-500 dark:text-zinc-400 text-xs">
                 {formatRelativeTime(request.DATE_CREATED)}
               </span>
             </div>
-            <div className="mt-1 text-zinc-600 dark:text-zinc-300 text-sm">
-              Spot {request.DETAILS.PARKING_SPOT.NAME} · {request.DETAILS.THIRD_PARTY_DATA.REQUESTED_SERVICE}
+            <div className="mt-1 text-zinc-600 dark:text-zinc-200 text-lg">
+              {request.DETAILS.PARKING_SPOT.NAME}<br />{request.DETAILS.THIRD_PARTY_DATA.REQUESTED_SERVICE}
               {request.DETAILS.THIRD_PARTY_DATA.REQUESTED_AMOUNT
                 ? ` (${request.DETAILS.THIRD_PARTY_DATA.REQUESTED_AMOUNT})`
                 : ""}
               {request.DETAILS.OIL ? " · Oil requested" : ""}
             </div>
-            <div className="mt-1 text-zinc-400 text-xs">Status {request.STATUS_ID}</div>
+            {/* <div className="mt-1 text-zinc-400 text-xs">Status {request.STATUS_ID}</div> */}
           </li>
         ))}
       </ul>
