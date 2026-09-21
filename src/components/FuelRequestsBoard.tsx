@@ -44,8 +44,17 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
             className="bg-white dark:bg-zinc-900 shadow-sm p-4 border border-zinc-200 dark:border-zinc-800 rounded-lg"
           >
             <div className="flex justify-between items-center">
-              <span className="font-medium text-zinc-900 dark:text-zinc-50">
+              <span className="flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-50">
                 {request.RESOURCE.NAME} ({request.RESOURCE.MODEL})
+                <span
+                  className={
+                    request.INITIATOR.USER_ID === 2
+                      ? "rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                      : "rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                  }
+                >
+                  {request.INITIATOR.USER_ID === 2 ? "Automated" : "Pilot"}
+                </span>
               </span>
               <span className="text-zinc-500 dark:text-zinc-400 text-xs">
                 {formatRelativeTime(request.DATE_CREATED)}
