@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dashboardAccess, fuelerDashboardData } from "@/lib/erau/api";
-import { ensureUpstreamCookies, persistUpstreamCookies } from "@/lib/erau/cookies";
+import { ensureUpstreamCookies, persistAccessCode, persistUpstreamCookies } from "@/lib/erau/cookies";
 import { upstreamErrorResponse } from "@/lib/erau/errors";
 
 export async function POST(request: Request) {
@@ -21,7 +21,10 @@ export async function POST(request: Request) {
     await persistUpstreamCookies({ ...accessResult.cookies, ...heartbeat.cookies });
 
     const granted = accessResult.data === true;
-    if (!granted) {
+    if (granted) {
+      // Remember the code so future session expirations don't require re-prompting the user.
+      await persistAccessCode(code);
+    } else {
       // Diagnostic: see exactly what upstream said when it declines.
       console.log(`[erau] dashboardAccess did not grant access: data=${JSON.stringify(accessResult.data)} message=${accessResult.message}`);
     }

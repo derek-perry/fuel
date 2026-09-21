@@ -4,6 +4,8 @@ import { warmUpSession } from "./client";
 import { erauConfig } from "./config";
 
 const PROXY_COOKIE_NAME = "erau_cookies";
+const ACCESS_CODE_COOKIE_NAME = "erau_access_code";
+const ACCESS_CODE_MAX_AGE_SECONDS = 60 * 60 * 24 * 90; // 90 days
 
 function readStoredMap(raw: string | undefined): CookieMap {
   if (!raw) return {};
@@ -35,6 +37,29 @@ export async function persistUpstreamCookies(newCookies: CookieMap): Promise<voi
 export async function clearUpstreamCookies(): Promise<void> {
   const store = await cookies();
   store.delete(PROXY_COOKIE_NAME);
+}
+
+// Remembers the access code the user typed so we can re-send it silently once the upstream
+// session expires, instead of prompting again every time.
+export async function readStoredAccessCode(): Promise<string | null> {
+  const store = await cookies();
+  return store.get(ACCESS_CODE_COOKIE_NAME)?.value ?? null;
+}
+
+export async function persistAccessCode(code: string): Promise<void> {
+  const store = await cookies();
+  store.set(ACCESS_CODE_COOKIE_NAME, code, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: ACCESS_CODE_MAX_AGE_SECONDS,
+  });
+}
+
+export async function clearStoredAccessCode(): Promise<void> {
+  const store = await cookies();
+  store.delete(ACCESS_CODE_COOKIE_NAME);
 }
 
 // Like `readUpstreamCookies`, but loads the dashboard page first (once, when we don't already
