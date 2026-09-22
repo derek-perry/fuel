@@ -10,20 +10,36 @@ function parseErauDate(value: string): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-export function formatRelativeTime(value: string): string {
+export function formatElapsedTime(value: string): string {
   const date = parseErauDate(value);
   if (!date) return value;
 
-  const diffSec = Math.round((Date.now() - date.getTime()) / 1000);
-  if (diffSec < 5) return "just now";
-  if (diffSec < 60) return `${diffSec}s ago`;
+  const elapsedSec = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  const hours = Math.floor(elapsedSec / 3600);
+  const minutes = Math.floor((elapsedSec % 3600) / 60);
+  const seconds = elapsedSec % 60;
+  const parts = [];
 
-  const diffMin = Math.round(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
+  // Only pad a unit to 2 digits when a higher, non-zero unit is also shown.
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0 || hours > 0) parts.push(`${hours > 0 ? String(minutes).padStart(2, "0") : minutes}m`);
+  parts.push(`${minutes > 0 || hours > 0 ? String(seconds).padStart(2, "0") : seconds}s`);
 
-  const diffHour = Math.round(diffMin / 60);
-  if (diffHour < 24) return `${diffHour}h ago`;
+  return parts.join(" ");
+}
 
-  const diffDay = Math.round(diffHour / 24);
-  return `${diffDay}d ago`;
+export function formatClockTimeFromDate(date: Date): string {
+  return date.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}
+
+export function formatClockTime(value: string): string {
+  const date = parseErauDate(value);
+  if (!date) return value;
+
+  return formatClockTimeFromDate(date);
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface AccessCodeModalProps {
   onGranted: () => void;
@@ -42,9 +43,12 @@ export default function AccessCodeModal({ onGranted }: AccessCodeModalProps) {
         onSubmit={handleSubmit}
         className="space-y-4 bg-white dark:bg-zinc-900 shadow-sm p-6 border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-sm"
       >
-        <div>
-          <h1 className="font-semibold text-zinc-900 dark:text-zinc-50 text-lg">Fueler Dashboard</h1>
-          <p className="mt-1 text-zinc-500 dark:text-zinc-400 text-sm">Enter the access code to continue.</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard</h1>
+            <p className="mt-1 text-zinc-500 dark:text-zinc-400 text-sm">Enter the access code to continue.</p>
+          </div>
+          <ThemeToggle />
         </div>
 
         <input
@@ -53,7 +57,7 @@ export default function AccessCodeModal({ onGranted }: AccessCodeModalProps) {
           value={code}
           onChange={(event) => setCode(event.target.value)}
           placeholder="Access code"
-          className="bg-transparent px-3 py-2 border border-zinc-300 focus:border-zinc-500 dark:border-zinc-700 rounded-md outline-none w-full text-zinc-900 dark:text-zinc-50 text-sm"
+          className="bg-transparent px-3 py-2 border border-zinc-300 focus:border-zinc-500 dark:border-zinc-700 rounded-md outline-none w-full text-zinc-900 dark:text-zinc-100 text-sm"
         />
 
         {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
@@ -61,7 +65,7 @@ export default function AccessCodeModal({ onGranted }: AccessCodeModalProps) {
         <button
           type="submit"
           disabled={submitting || code.length === 0}
-          className="bg-zinc-900 dark:bg-zinc-50 disabled:opacity-50 px-3 py-2 rounded-md w-full font-medium text-white dark:text-zinc-900 text-sm"
+          className="bg-zinc-900 dark:bg-zinc-100 disabled:opacity-50 px-3 py-2 rounded-md w-full font-medium text-white dark:text-zinc-900 text-sm cursor-pointer disabled:cursor-not-allowed"
         >
           {submitting ? "Checking…" : "Continue"}
         </button>
