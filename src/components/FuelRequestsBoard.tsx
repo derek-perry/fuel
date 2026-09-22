@@ -37,9 +37,9 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
   );
 
   return (
-    <div className="flex-1 mx-auto p-6 w-full max-w-3xl">
-      <header className="flex flex-row justify-between items-center mb-4">
-        <h1 className="font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard</h1>
+    <div className="flex flex-col flex-1 gap-4 mx-auto p-6 w-full max-w-3xl">
+      <header className="flex flex-row justify-between max-[342px]:justify-center items-center gap-4">
+        <h1 className="max-[342px]:hidden font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard</h1>
 
         <div className="flex flex-row items-center gap-6">
           <RefreshControl error={!!error} isLoading={isLoading} lastFetchedAt={lastFetchedAt} onRefresh={() => mutate()} />
