@@ -2590,7 +2590,7 @@ export const mockFuelRequests: FuelRequest[] = [
         "FUEL": 1,
         "THIRD_PARTY_DATA": {
           "REQUESTED_SERVICE": "Fill to tabs",
-          "REQUESTED_AMOUNT": ""
+          "REQUESTED_AMOUNT": "Left wing only"
         },
         "DENY_REASON_ID": ""
       },

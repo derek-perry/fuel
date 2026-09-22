@@ -7,7 +7,7 @@ interface FuelRequestItemProps {
   completedAt?: string;
 }
 
-function FuelIcon({ service }: { service: string }) {
+function FuelIcon({ service, customAmount }: { service: string; customAmount?: string }) {
   const normalizedService = service.toLowerCase();
   const isTopOff = normalizedService.includes("top off");
   const isFillToTabs = normalizedService.includes("fill to tabs");
@@ -20,7 +20,7 @@ function FuelIcon({ service }: { service: string }) {
       viewBox="0 0 24 24"
     >
       <path d="M5 4.5A1.5 1.5 0 0 1 6.5 3h7A1.5 1.5 0 0 1 15 4.5V21H5V4.5Z" stroke="currentColor" strokeWidth="1.8" />
-      {isTopOff || isFillToTabs ? (
+      {((isTopOff || isFillToTabs) && !customAmount) ? (
         <rect
           fill="currentColor"
           height={isTopOff ? 14 : 6}
@@ -31,7 +31,6 @@ function FuelIcon({ service }: { service: string }) {
         />
       ) : (
         <>
-          <path d="m7.5 11.5 6 6" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
           <path d="m13.5 11.5-6 6" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
         </>
       )}
@@ -84,7 +83,7 @@ export default function FuelRequestItem({ request, completedAt }: FuelRequestIte
         <div className="flex flex-col justify-start items-start gap-2 font-medium text-zinc-600 dark:text-zinc-200 text-xl">
           <span className="bg-white dark:bg-zinc-800 shadow-sm px-3.5 py-1 border border-zinc-300 dark:border-zinc-600 rounded-md font-mono font-bold">{request.DETAILS.PARKING_SPOT.NAME}</span>
           <span className="flex flex-col items-start gap-x-1 gap-y-1">
-            {request.DETAILS.THIRD_PARTY_DATA.REQUESTED_SERVICE ? <span className="flex flex-row items-center gap-1"><FuelIcon service={request.DETAILS.THIRD_PARTY_DATA.REQUESTED_SERVICE} />
+            {request.DETAILS.THIRD_PARTY_DATA.REQUESTED_SERVICE ? <span className="flex flex-row items-center gap-1"><FuelIcon service={request.DETAILS.THIRD_PARTY_DATA.REQUESTED_SERVICE} customAmount={request.DETAILS.THIRD_PARTY_DATA.REQUESTED_AMOUNT} />
             {request.DETAILS.THIRD_PARTY_DATA.REQUESTED_SERVICE}
               {request.DETAILS.THIRD_PARTY_DATA.REQUESTED_AMOUNT
                 ? ` (${request.DETAILS.THIRD_PARTY_DATA.REQUESTED_AMOUNT})`
