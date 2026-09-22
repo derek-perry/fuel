@@ -122,3 +122,36 @@ export interface FuelRequest {
   PARENTED: number;
   [key: string]: unknown;
 }
+
+// Minimal subset of FuelRequest fields needed to render a request card. FuelRequest is
+// structurally assignable to this, so FuelRequestItem/history code can accept either without
+// storing (or requiring) the full upstream payload.
+export interface FuelRequestSummary {
+  REQUEST_ID: number;
+  DATE_CREATED: string;
+  INITIATOR: {
+    USER_ID: number;
+  };
+  ACTIVITY?: unknown;
+  RESOURCE: {
+    NAME: string;
+    MODEL: string;
+  };
+  DETAILS: {
+    OIL: number;
+    PARKING_SPOT: {
+      NAME: string;
+    };
+    THIRD_PARTY_DATA: {
+      REQUESTED_SERVICE: string;
+      REQUESTED_AMOUNT: string;
+    };
+  };
+}
+
+// A request that disappeared from the live upstream feed (completed/cancelled/etc). Upstream
+// has no history endpoint, so `COMPLETED_AT` is set locally to when we first noticed it missing,
+// not an upstream timestamp.
+export interface FuelRequestHistoryEntry extends FuelRequestSummary {
+  COMPLETED_AT: string;
+}

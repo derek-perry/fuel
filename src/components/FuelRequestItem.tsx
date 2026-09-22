@@ -1,8 +1,10 @@
 import { formatClockTime, formatElapsedTime, isElapsedTimeOverFiveMinutes } from "@/lib/formatTime";
-import type { FuelRequest } from "@/types/fuelRequest";
+import type { FuelRequestSummary } from "@/types/fuelRequest";
 
 interface FuelRequestItemProps {
-  request: FuelRequest;
+  request: FuelRequestSummary;
+  // When set, renders as a completed history entry (completion time) instead of a live elapsed timer.
+  completedAt?: string;
 }
 
 function FuelIcon({ service }: { service: string }) {
@@ -50,7 +52,7 @@ function OilIcon() {
   );
 }
 
-export default function FuelRequestItem({ request }: FuelRequestItemProps) {
+export default function FuelRequestItem({ request, completedAt }: FuelRequestItemProps) {
   const isAutoRequest = request.INITIATOR.USER_ID === 2;
   const isConversion = isAutoRequest && request.ACTIVITY != null;
   const resourceModel = request.RESOURCE.MODEL;
@@ -67,7 +69,9 @@ export default function FuelRequestItem({ request }: FuelRequestItemProps) {
       }
     >
       <div className="flex flex-col justify-center items-start gap-2">
-        <span className="flex flex-row max-[349px]:flex-col items-center gap-2 text-zinc-900 dark:text-zinc-100">
+        <span className={
+          completedAt ? "flex flex-row max-[480px]:flex-col items-center gap-2 text-zinc-900 dark:text-zinc-100" : "flex flex-row max-[349px]:flex-col items-center gap-2 text-zinc-900 dark:text-zinc-100"
+        }>
           <span className="font-mono font-medium text-xl">{request.RESOURCE.NAME}</span>
           <span className={
             resourceModel === "DA42 NG" ?
@@ -92,14 +96,24 @@ export default function FuelRequestItem({ request }: FuelRequestItemProps) {
       <div className="flex flex-col justify-start items-end self-stretch gap-4">
         <span
           className={`bg-zinc-200/70 dark:bg-zinc-800/60 shadow-sm px-2 py-0.5 rounded-md font-mono font-medium text-sm text-right leading-relaxed whitespace-nowrap ${
-            isElapsedTimeOverFiveMinutes(request.DATE_CREATED)
+            !completedAt && isElapsedTimeOverFiveMinutes(request.DATE_CREATED)
               ? "animate-pulse text-red-700 dark:text-red-400 border border-red-700 dark:border-red-400"
               : "text-zinc-600 dark:text-zinc-200 border border-zinc-200/70 dark:border-zinc-800/60"
           }`}
         >
-          {formatElapsedTime(request.DATE_CREATED)}
-          <br />
-          {formatClockTime(request.DATE_CREATED)}
+          {completedAt ? (
+            <>
+              Completed {formatClockTime(completedAt)}
+              <br />
+              Created {formatClockTime(request.DATE_CREATED)}
+            </>
+          ) : (
+            <>
+              {formatElapsedTime(request.DATE_CREATED)}
+              <br />
+              {formatClockTime(request.DATE_CREATED)}
+            </>
+          )}
         </span>
         <span
           className={

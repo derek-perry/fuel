@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import FuelRequestItem from "@/components/FuelRequestItem";
+import HistoryModal from "@/components/HistoryModal";
 import RefreshControl from "@/components/RefreshControl";
 import ThemeToggle from "@/components/ThemeToggle";
 import { fetcher } from "@/lib/fetcher";
+import { useFuelRequestHistory } from "@/lib/history";
 import type { FuelRequest } from "@/types/fuelRequest";
 
 interface RequestsResponse {
@@ -21,6 +23,7 @@ interface FuelRequestsBoardProps {
 
 export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardProps) {
   const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const { data, error, isLoading, isValidating, mutate } = useSWR<RequestsResponse>("/api/erau/requests", fetcher, {
     onSuccess: (payload) => {
       setLastFetchedAt(new Date());
@@ -43,8 +46,10 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
     new Date(a.DATE_CREATED).getTime() - new Date(b.DATE_CREATED).getTime(),
   );
 
+  const history = useFuelRequestHistory(requests);
+
   return (
-    <div className="flex flex-col flex-1 gap-4 mx-auto p-6 w-full max-w-3xl">
+    <main className="flex flex-col flex-1 gap-4 mx-auto p-6 w-full max-w-3xl">
       <header className="flex flex-row justify-between max-[370px]:justify-center items-center gap-4">
         <h1 className="max-[370px]:hidden font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard</h1>
 
@@ -70,6 +75,16 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
           {requests?.map((request) => <FuelRequestItem key={request.REQUEST_ID} request={request} />)}
         </ul>
       )}
-    </div>
+
+      <button
+        type="button"
+        onClick={() => setShowHistory(true)}
+        className="self-end bg-white hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 shadow-md px-4 py-2 border border-zinc-200 dark:border-zinc-600 rounded-full text-zinc-600 dark:text-zinc-300 text-sm cursor-pointer"
+      >
+        History{history.length > 0 ? ` (${history.length})` : ""}
+      </button>
+
+      {showHistory && <HistoryModal history={history} onClose={() => setShowHistory(false)} />}
+    </main>
   );
 }
