@@ -55,6 +55,50 @@ export interface Resource {
   [key: string]: unknown;
 }
 
+// Present only once an instructor/student have started an activity for the resource; absent
+// (whole ACTIVITY key missing) on freshly created system-initiated requests.
+export interface Activity {
+  ACTIVITY_ID: number;
+  ACTIVITY_TYPE: string;
+  ACTIVITY_TYPE_ID: number;
+  RESOURCE_ID: number;
+  PARKING_SPOT_ID: number;
+  PARKING_SPOT: ParkingSpot;
+  RESOURCE_CAMPUS: string;
+  STATUS: string;
+  STATUS_CODE: number;
+  START_DATETIME: string;
+  END_DATETIME: string | number;
+  START_HOBBS: number;
+  END_HOBBS: string | number;
+  START_TACH: number;
+  END_TACH: string | number;
+  CANCEL_REASON: string;
+  ACT_COMMENT: string;
+  COMPLETION_REQUESTED: string | number;
+  FUEL_LEVEL: string | number;
+  OFFSITE_RETURN: string | number;
+  OBSERVERS: number;
+  ETA_AUTH: string;
+  ETA_ACT_ID: number;
+  DESTINATION_ID: number;
+  DATE_MODIFIED: string;
+  USER_ROLE: string;
+  INSTRUCTOR_USER_ID: number;
+  INSTRUCTOR_DISP_NAME: string;
+  INSTRUCTOR_NO_ACCOUNT: number;
+  INSTRUCTOR_USER: Initiator;
+  STUDENT1_USER_ID: number;
+  STUDENT1_DISP_NAME: string;
+  STUDENT1_NO_ACCOUNT: number;
+  STUDENT1_USER: Initiator;
+  STUDENT2_USER_ID: number | string;
+  STUDENT2_DISP_NAME: string;
+  STUDENT2_NO_ACCOUNT: number;
+  STUDENT2_USER: Initiator | Record<string, never>;
+  [key: string]: unknown;
+}
+
 export interface FuelRequest {
   REQUEST_ID: number;
   RESOURCE_ID: number;
@@ -69,5 +113,12 @@ export interface FuelRequest {
   DETAILS: RequestDetails;
   INITIATOR: Initiator;
   RESOURCE: Resource;
+  // Only set once a pilot/instructor has responded; absent on requests still awaiting response.
+  ACTIVITY_ID?: string | number;
+  ACTIVITY?: Activity;
+  RESPONDING_USER_ID: string | number;
+  INITIATING_USER_ID: number;
+  PARENT_ID: number;
+  PARENTED: number;
   [key: string]: unknown;
 }

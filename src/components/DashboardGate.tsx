@@ -24,7 +24,7 @@ export default function DashboardGate() {
   if (isLoading || !data) {
     return (
       <div className="flex flex-1 justify-center items-center">
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm">Loading…</p>
+        <p className="text-zinc-500 dark:text-zinc-400 text-sm">Loading Fueler Dashboard…</p>
       </div>
     );
   }

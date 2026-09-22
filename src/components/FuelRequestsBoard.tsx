@@ -21,7 +21,7 @@ interface FuelRequestsBoardProps {
 
 export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardProps) {
   const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
-  const { data, error, isLoading, mutate } = useSWR<RequestsResponse>("/api/erau/requests", fetcher, {
+  const { data, error, isLoading, isValidating, mutate } = useSWR<RequestsResponse>("/api/erau/requests", fetcher, {
     refreshInterval: POLL_INTERVAL_MS,
     onSuccess: (payload) => {
       setLastFetchedAt(new Date());
@@ -42,7 +42,12 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
         <h1 className="max-[342px]:hidden font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard</h1>
 
         <div className="flex flex-row items-center gap-6">
-          <RefreshControl error={!!error} isLoading={isLoading} lastFetchedAt={lastFetchedAt} onRefresh={() => mutate()} />
+          <RefreshControl
+            error={!!error}
+            isLoading={isLoading || isValidating}
+            lastFetchedAt={lastFetchedAt}
+            onRefresh={() => mutate()}
+          />
 
           <ThemeToggle />
         </div>

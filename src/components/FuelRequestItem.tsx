@@ -52,6 +52,7 @@ function OilIcon() {
 
 export default function FuelRequestItem({ request }: FuelRequestItemProps) {
   const isAutoRequest = request.INITIATOR.USER_ID === 2;
+  const isConversion = isAutoRequest && request.ACTIVITY != null;
   const resourceModel = request.RESOURCE.MODEL;
   const resourceModelCleaned =
     resourceModel === "DA42 NG" ? "Diamond" : resourceModel === "172S NAV III" ? "Cessna" : resourceModel;
@@ -59,9 +60,11 @@ export default function FuelRequestItem({ request }: FuelRequestItemProps) {
   return (
     <li
       className={
-        isAutoRequest
-          ? "flex flex-row justify-between items-center bg-green-100/40 dark:bg-green-900/20 shadow-md p-4 border border-green-100 dark:border-green-900/40 rounded-md"
-          : "flex flex-row justify-between items-center bg-amber-100/40 dark:bg-amber-900/20 shadow-md p-4 border border-amber-100 dark:border-amber-900/40 rounded-md"
+        isConversion
+          ? "flex flex-row justify-between items-center bg-red-100/40 dark:bg-red-900/30 shadow-md p-4 border border-red-100 dark:border-red-900/40 rounded-md"
+          : isAutoRequest
+          ? "flex flex-row justify-between items-center bg-green-100/40 dark:bg-green-900/30 shadow-md p-4 border border-green-100 dark:border-green-900/40 rounded-md"
+          : "flex flex-row justify-between items-center bg-amber-100/60 dark:bg-amber-900/30 shadow-md p-4 border border-amber-100 dark:border-amber-900/40 rounded-md"
       }
     >
       <div className="flex flex-col justify-center items-start gap-2">
@@ -95,12 +98,14 @@ export default function FuelRequestItem({ request }: FuelRequestItemProps) {
         </span>
         <span
           className={
-            isAutoRequest
+            isConversion
+              ? "rounded-full bg-red-200 px-2 py-0.5 text-md font-semibold text-red-700 dark:bg-red-900/80 dark:text-red-300 shadow-sm"
+              : isAutoRequest
               ? "rounded-full bg-green-200 px-2 py-0.5 text-md font-semibold text-green-700 dark:bg-green-900/80 dark:text-green-300 shadow-sm"
               : "rounded-full bg-amber-200 px-2 py-0.5 text-md font-semibold text-amber-700 dark:bg-amber-900/80 dark:text-amber-300 shadow-sm"
           }
         >
-          {isAutoRequest ? "Auto" : "Pilot"}
+          {isConversion ? "Conversion" : isAutoRequest ? "Auto" : "Pilot"}
         </span>
       </div>
     </li>
