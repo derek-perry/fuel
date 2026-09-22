@@ -93,8 +93,8 @@ export default function FuelRequestItem({ request }: FuelRequestItemProps) {
         <span
           className={`bg-zinc-200/70 dark:bg-zinc-800/60 shadow-sm px-2 py-0.5 rounded-md font-mono font-medium text-sm text-right leading-relaxed whitespace-nowrap ${
             isElapsedTimeOverFiveMinutes(request.DATE_CREATED)
-              ? "animate-pulse text-red-600 dark:text-red-400"
-              : "text-zinc-600 dark:text-zinc-200"
+              ? "animate-pulse text-red-700 dark:text-red-400 border border-red-700 dark:border-red-400"
+              : "text-zinc-600 dark:text-zinc-200 border border-zinc-200/70 dark:border-zinc-800/60"
           }`}
         >
           {formatElapsedTime(request.DATE_CREATED)}

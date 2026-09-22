@@ -9,10 +9,11 @@ interface RefreshControlProps {
   error: boolean;
   isLoading: boolean;
   lastFetchedAt: Date | null;
+  pollIntervalMs: number;
   onRefresh: () => void;
 }
 
-export default function RefreshControl({ error, isLoading, lastFetchedAt, onRefresh }: RefreshControlProps) {
+export default function RefreshControl({ error, isLoading, lastFetchedAt, pollIntervalMs, onRefresh }: RefreshControlProps) {
   const [disabled, setDisabled] = useState(false);
 
   function handleClick() {
@@ -23,14 +24,24 @@ export default function RefreshControl({ error, isLoading, lastFetchedAt, onRefr
   }
 
   return (
-    <div className="flex flex-row items-center gap-2 bg-white dark:bg-zinc-900 shadow-md pl-2 border border-zinc-200 dark:border-zinc-600 rounded-full text-zinc-600 dark:text-zinc-300">
+    <div className="relative flex flex-row items-center gap-2 bg-white dark:bg-zinc-900 shadow-md pl-2 border border-zinc-200 dark:border-zinc-600 rounded-full overflow-hidden text-zinc-600 dark:text-zinc-300">
+      {!error && !isLoading && (
+        // key remounts the overlay so its fill animation restarts in lockstep with the poll interval
+        <span
+          key={lastFetchedAt?.getTime()}
+          aria-hidden
+          className="right-0 absolute inset-y-0 bg-zinc-100 dark:bg-zinc-800 animate-refresh-progress"
+          style={{ animationDuration: `${pollIntervalMs}ms` }}
+        />
+      )}
+
       {error ? (
-        <span className="text-red-600 dark:text-red-400 text-sm">Reconnecting…</span>
+        <span className="z-10 text-red-600 dark:text-red-400 text-sm">Reconnecting…</span>
       ) : isLoading ? (
-        <span className="px-1 text-zinc-500 dark:text-zinc-400 text-sm">Loading…</span>
+        <span className="z-10 px-1 text-zinc-500 dark:text-zinc-400 text-sm">Loading…</span>
       ) : (
         lastFetchedAt && (
-          <span className="font-mono text-zinc-500 dark:text-zinc-400 text-sm">
+          <span className="z-10 font-mono text-zinc-500 dark:text-zinc-400 text-sm">
             {formatClockTimeFromDate(lastFetchedAt)}
           </span>
         )
@@ -42,7 +53,7 @@ export default function RefreshControl({ error, isLoading, lastFetchedAt, onRefr
         disabled={disabled}
         title="Refresh requests"
         aria-label="Refresh requests"
-        className="flex justify-center items-center bg-white hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 disabled:opacity-50 shadow-md border border-zinc-200 dark:border-zinc-600 rounded-full w-9 min-w-9 h-9 min-h-9 text-zinc-600 dark:text-zinc-300 cursor-pointer disabled:cursor-not-allowed"
+        className="z-10 flex justify-center items-center bg-white hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 disabled:opacity-50 shadow-md border border-zinc-200 dark:border-zinc-600 rounded-full w-9 min-w-9 h-9 min-h-9 text-zinc-600 dark:text-zinc-300 cursor-pointer disabled:cursor-not-allowed"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
           <path

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import FuelRequestItem from "@/components/FuelRequestItem";
 import RefreshControl from "@/components/RefreshControl";
@@ -22,7 +22,6 @@ interface FuelRequestsBoardProps {
 export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardProps) {
   const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
   const { data, error, isLoading, isValidating, mutate } = useSWR<RequestsResponse>("/api/erau/requests", fetcher, {
-    refreshInterval: POLL_INTERVAL_MS,
     onSuccess: (payload) => {
       setLastFetchedAt(new Date());
       if (!payload.hasAccess) onAccessLost();
@@ -31,6 +30,14 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
       setLastFetchedAt(new Date());
     },
   });
+
+  // Schedule the next poll ourselves so a manual refresh resets the interval instead of
+  // racing against SWR's own refreshInterval timer, which manual mutate() calls don't reset.
+  useEffect(() => {
+    if (lastFetchedAt === null) return;
+    const timer = setTimeout(() => mutate(), POLL_INTERVAL_MS);
+    return () => clearTimeout(timer);
+  }, [lastFetchedAt, mutate]);
 
   const requests = data?.requests.toSorted((a, b) =>
     new Date(a.DATE_CREATED).getTime() - new Date(b.DATE_CREATED).getTime(),
@@ -46,6 +53,7 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
             error={!!error}
             isLoading={isLoading || isValidating}
             lastFetchedAt={lastFetchedAt}
+            pollIntervalMs={POLL_INTERVAL_MS}
             onRefresh={() => mutate()}
           />
 
