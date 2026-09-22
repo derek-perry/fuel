@@ -28,6 +28,11 @@ export function formatElapsedTime(value: string): string {
   return parts.join(" ");
 }
 
+export function isElapsedTimeOverFiveMinutes(value: string): boolean {
+  const date = parseErauDate(value);
+  return date != null && Date.now() - date.getTime() > 5 * 60 * 1000;
+}
+
 export function formatClockTimeFromDate(date: Date): string {
   return date.toLocaleTimeString("en-GB", {
     hour: "2-digit",

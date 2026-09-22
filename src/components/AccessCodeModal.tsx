@@ -41,7 +41,7 @@ export default function AccessCodeModal({ onGranted }: AccessCodeModalProps) {
     <div className="flex flex-1 justify-center items-center p-6">
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 bg-white dark:bg-zinc-900 shadow-sm p-6 border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-sm"
+        className="space-y-4 bg-white dark:bg-zinc-900 shadow-md p-6 border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-sm"
       >
         <div className="flex justify-between items-center">
           <div>

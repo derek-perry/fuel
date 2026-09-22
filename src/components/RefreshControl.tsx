@@ -27,7 +27,7 @@ export default function RefreshControl({ error, isLoading, lastFetchedAt, onRefr
       {error ? (
         <span className="text-red-600 dark:text-red-400 text-sm">Reconnecting…</span>
       ) : isLoading ? (
-        <span className="text-zinc-500 dark:text-zinc-400 text-sm">Loading…</span>
+        <span className="px-1 text-zinc-500 dark:text-zinc-400 text-sm">Loading…</span>
       ) : (
         lastFetchedAt && (
           <span className="font-mono text-zinc-500 dark:text-zinc-400 text-sm">

@@ -38,8 +38,8 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
 
   return (
     <div className="flex flex-col flex-1 gap-4 mx-auto p-6 w-full max-w-3xl">
-      <header className="flex flex-row justify-between max-[342px]:justify-center items-center gap-4">
-        <h1 className="max-[342px]:hidden font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard</h1>
+      <header className="flex flex-row justify-between max-[370px]:justify-center items-center gap-4">
+        <h1 className="max-[370px]:hidden font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard</h1>
 
         <div className="flex flex-row items-center gap-6">
           <RefreshControl
@@ -53,13 +53,15 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
         </div>
       </header>
 
-      {data && data.requests.length === 0 && (
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm">No pending fuel requests.</p>
+      {data && data.requests.length === 0 ? (
+        <div className="flex flex-col justify-center items-center gap-2 space-y-4 bg-white dark:bg-zinc-900 shadow-md p-6 border border-zinc-200 dark:border-zinc-800 rounded-lg w-full">
+          <p className="text-zinc-500 dark:text-zinc-400 text-xl">No pending fuel requests.</p>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {requests?.map((request) => <FuelRequestItem key={request.REQUEST_ID} request={request} />)}
+        </ul>
       )}
-
-      <ul className="space-y-3">
-        {requests?.map((request) => <FuelRequestItem key={request.REQUEST_ID} request={request} />)}
-      </ul>
     </div>
   );
 }

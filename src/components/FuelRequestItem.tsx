@@ -1,4 +1,4 @@
-import { formatClockTime, formatElapsedTime } from "@/lib/formatTime";
+import { formatClockTime, formatElapsedTime, isElapsedTimeOverFiveMinutes } from "@/lib/formatTime";
 import type { FuelRequest } from "@/types/fuelRequest";
 
 interface FuelRequestItemProps {
@@ -54,8 +54,7 @@ export default function FuelRequestItem({ request }: FuelRequestItemProps) {
   const isAutoRequest = request.INITIATOR.USER_ID === 2;
   const isConversion = isAutoRequest && request.ACTIVITY != null;
   const resourceModel = request.RESOURCE.MODEL;
-  const resourceModelCleaned =
-    resourceModel === "DA42 NG" ? "Diamond" : resourceModel === "172S NAV III" ? "Cessna" : resourceModel;
+  const resourceModelCleaned = resourceModel === "DA42 NG" ? "Diamond" : resourceModel === "172S NAV III" ? "Cessna" : resourceModel;
 
   return (
     <li
@@ -68,7 +67,7 @@ export default function FuelRequestItem({ request }: FuelRequestItemProps) {
       }
     >
       <div className="flex flex-col justify-center items-start gap-2">
-        <span className="flex flex-row max-[342px]:flex-col items-center gap-2 text-zinc-900 dark:text-zinc-100">
+        <span className="flex flex-row max-[349px]:flex-col items-center gap-2 text-zinc-900 dark:text-zinc-100">
           <span className="font-mono font-medium text-xl">{request.RESOURCE.NAME}</span>
           <span className={
             resourceModel === "DA42 NG" ?
@@ -91,7 +90,13 @@ export default function FuelRequestItem({ request }: FuelRequestItemProps) {
         </div>
       </div>
       <div className="flex flex-col justify-start items-end self-stretch gap-4">
-        <span className="bg-zinc-200/70 dark:bg-zinc-800/60 shadow-sm px-2 py-0.5 rounded-md font-mono font-medium text-zinc-600 dark:text-zinc-200 text-sm text-right leading-relaxed whitespace-nowrap">
+        <span
+          className={`bg-zinc-200/70 dark:bg-zinc-800/60 shadow-sm px-2 py-0.5 rounded-md font-mono font-medium text-sm text-right leading-relaxed whitespace-nowrap ${
+            isElapsedTimeOverFiveMinutes(request.DATE_CREATED)
+              ? "animate-pulse text-red-600 dark:text-red-400"
+              : "text-zinc-600 dark:text-zinc-200"
+          }`}
+        >
           {formatElapsedTime(request.DATE_CREATED)}
           <br />
           {formatClockTime(request.DATE_CREATED)}
