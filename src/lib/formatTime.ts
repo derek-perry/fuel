@@ -48,3 +48,14 @@ export function formatClockTime(value: string): string {
 
   return formatClockTimeFromDate(date);
 }
+
+export function formatClockDate(value: string): string {
+  const date = parseErauDate(value);
+  if (!date) return value;
+
+  return date.toLocaleDateString("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}

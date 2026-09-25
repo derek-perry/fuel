@@ -1,4 +1,4 @@
-import { formatClockTime, formatElapsedTime, isElapsedTimeOverFiveMinutes } from "@/lib/formatTime";
+import { formatClockTime, formatElapsedTime, isElapsedTimeOverFiveMinutes, formatClockDate } from "@/lib/formatTime";
 import type { FuelRequestSummary } from "@/types/fuelRequest";
 
 interface FuelRequestItemProps {
@@ -105,6 +105,8 @@ export default function FuelRequestItem({ request, completedAt }: FuelRequestIte
               Completed {formatClockTime(completedAt)}
               <br />
               Created {formatClockTime(request.DATE_CREATED)}
+              <br />
+              {formatClockDate(request.DATE_CREATED)}
             </>
           ) : (
             <>
