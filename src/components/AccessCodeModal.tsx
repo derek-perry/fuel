@@ -2,12 +2,18 @@
 
 import { useState, type FormEvent } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
+import IdentityPicker from "@/components/IdentityPicker";
+import type { Identity } from "@/lib/identity";
+import trucks from "@/data/trucks.json";
+import fuelers from "@/data/fuelers.json";
 
 interface AccessCodeModalProps {
   onGranted: () => void;
+  identity: Identity;
 }
 
-export default function AccessCodeModal({ onGranted }: AccessCodeModalProps) {
+export default function AccessCodeModal({ onGranted, identity }: AccessCodeModalProps) {
+  const { myTruck, myFueler, setMyTruck, setMyFueler } = identity;
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -41,24 +47,36 @@ export default function AccessCodeModal({ onGranted }: AccessCodeModalProps) {
     <div className="flex flex-1 justify-center items-center p-6">
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 bg-white dark:bg-zinc-900 shadow-md p-6 border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-sm"
+        className="space-y-8 bg-white dark:bg-zinc-900 shadow-md p-6 border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-md"
       >
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard</h1>
-            <p className="mt-1 text-zinc-500 dark:text-zinc-400 text-sm">Enter the access code to continue.</p>
+        <div className="flex flex-col space-y-2">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard</h1>
+              <p className="mt-1 text-zinc-500 dark:text-zinc-400 text-sm">Enter the access code to continue.</p>
+            </div>
+            <ThemeToggle />
           </div>
-          <ThemeToggle />
+          <input
+            type="password"
+            autoFocus
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            placeholder="Access code"
+            className="bg-transparent px-3 py-2 border border-zinc-300 focus:border-zinc-500 dark:border-zinc-700 rounded-md outline-none w-full text-zinc-900 dark:text-zinc-100 text-sm"
+          />
         </div>
 
-        <input
-          type="password"
-          autoFocus
-          value={code}
-          onChange={(event) => setCode(event.target.value)}
-          placeholder="Access code"
-          className="bg-transparent px-3 py-2 border border-zinc-300 focus:border-zinc-500 dark:border-zinc-700 rounded-md outline-none w-full text-zinc-900 dark:text-zinc-100 text-sm"
-        />
+        <div className="pt-8 border-zinc-200 dark:border-zinc-800 border-t">
+          <IdentityPicker
+            trucks={trucks}
+            fuelers={fuelers}
+            myTruck={myTruck}
+            myFueler={myFueler}
+            onChangeTruck={setMyTruck}
+            onChangeFueler={setMyFueler}
+          />
+        </div>
 
         {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
 

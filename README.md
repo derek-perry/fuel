@@ -77,6 +77,34 @@ Open [http://localhost:3000](http://localhost:3000). With `USE_MOCK_DATA=true`, 
 uses canned sample data and a placeholder access code automatically — no real ERAU credentials
 needed. Log into the dashboard with whatever you set `DASHBOARD_ACCESS_CODE` to.
 
+### Developing against live production data
+
+To run your local, hot-reloading dashboard code against the real, currently-updating production
+database (instead of a local/mock one), tunnel into the deployed app and point the local dev
+server at it:
+
+```bash
+ssh -L 3001:localhost:3000 fuel@your-server-ip
+```
+
+This forwards local port 3001 to the remote `fuel-dashboard` process's own port (bypassing
+Nginx/TLS entirely — it's just a plain loopback tunnel over SSH, never exposed to the network).
+Leave that running, then in your local `.env`:
+
+```bash
+REMOTE_DEV_PROXY_URL=http://localhost:3001
+```
+
+Run only `npm run dev` locally (no need for `npm run collector:dev` — the remote collector is
+already doing that). Every `/api/erau/*` call is now transparently proxied to the tunneled
+remote app (`next.config.ts`'s `rewrites()`), so log in with the real production
+`DASHBOARD_ACCESS_CODE`, not your local one.
+
+**This is a direct window into production, not a sandbox** — while `REMOTE_DEV_PROXY_URL` is
+set, every dashboard action, including claim/"fueled" clicks, writes to the real remote
+database. Remove the env var (and restart `npm run dev`) when you're done to go back to your
+local/mock data.
+
 ## Deployment (Ubuntu)
 
 A complete, from-scratch walkthrough for a fresh Ubuntu server (written for 26.04 LTS, but any

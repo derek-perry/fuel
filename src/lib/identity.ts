@@ -40,3 +40,5 @@ export function useIdentity() {
   return { myTruck, myFueler, setMyTruck, setMyFueler };
 }
 
+export type Identity = ReturnType<typeof useIdentity>;
+

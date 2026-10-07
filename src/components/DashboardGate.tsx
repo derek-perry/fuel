@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
+import { useIdentity } from "@/lib/identity";
 import AccessCodeModal from "./AccessCodeModal";
 import FuelRequestsBoard from "./FuelRequestsBoard";
 
@@ -12,6 +13,7 @@ interface StatusResponse {
 
 export default function DashboardGate() {
   const { data, mutate, isLoading } = useSWR<StatusResponse>("/api/erau/status", fetcher);
+  const identity = useIdentity();
 
   const handleGranted = useCallback(() => {
     mutate({ hasAccess: true }, { revalidate: false });
@@ -30,8 +32,9 @@ export default function DashboardGate() {
   }
 
   if (!data.hasAccess) {
-    return <AccessCodeModal onGranted={handleGranted} />;
+    return <AccessCodeModal onGranted={handleGranted} identity={identity} />;
   }
 
-  return <FuelRequestsBoard onAccessLost={handleAccessLost} />;
+  return <FuelRequestsBoard onAccessLost={handleAccessLost} identity={identity} />;
 }
+
