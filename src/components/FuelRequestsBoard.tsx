@@ -66,7 +66,7 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
   );
 
   return (
-    <main className="flex flex-col flex-1 gap-4 mx-auto p-6 w-full max-w-3xl">
+    <main className="flex flex-col flex-1 gap-4 mx-auto p-6 w-full max-w-4xl">
       <header className="flex flex-col items-center gap-4 w-full">
         <div className="flex flex-row justify-between max-[460px]:justify-center items-center gap-6 w-full">
           <h1 className="max-[460px]:hidden font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard{requests?.length ? ` (${requests.length})` : ""}</h1>
@@ -99,7 +99,7 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
           <p className="text-zinc-500 dark:text-zinc-400 text-xl">No pending fuel requests.</p>
         </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {requests?.map((request) => (
             <FuelRequestItem
               key={request.requestId}

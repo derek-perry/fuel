@@ -10,6 +10,8 @@ interface IdentityPickerProps {
   myFueler: string | null;
   onChangeTruck: (truck: string | null) => void;
   onChangeFueler: (fueler: string | null) => void;
+  // Swaps the (optional) hints for a plain label, e.g. when both values are needed to proceed.
+  required?: boolean;
 }
 
 // Shared "who am I" content — a fueler-name combobox + a tappable truck grid. Both optional.
@@ -21,6 +23,7 @@ export default function IdentityPicker({
   myFueler,
   onChangeTruck,
   onChangeFueler,
+  required = false,
 }: IdentityPickerProps) {
   const [fuelerQuery, setFuelerQuery] = useState(myFueler ?? "");
   const [showFuelerOptions, setShowFuelerOptions] = useState(false);
@@ -41,7 +44,7 @@ export default function IdentityPicker({
     <div className="space-y-8">
       <div>
         <label className="block mb-1.5 font-medium text-zinc-600 dark:text-zinc-300 text-xs">
-          Name <span className="font-normal text-zinc-400 dark:text-zinc-500">(optional)</span>
+          Name{!required && <span className="font-normal text-zinc-400 dark:text-zinc-500"> (optional)</span>}
         </label>
         <div className="relative">
           <input
@@ -81,7 +84,7 @@ export default function IdentityPicker({
 
       <div>
         <label className="block mb-1.5 font-medium text-zinc-600 dark:text-zinc-300 text-xs">
-          Truck <span className="font-normal text-zinc-400 dark:text-zinc-500">(optional)</span>
+          Truck{!required && <span className="font-normal text-zinc-400 dark:text-zinc-500"> (optional)</span>}
         </label>
         <div className="gap-2 grid grid-cols-3">
           {trucks.map((truck) => {
