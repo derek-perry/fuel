@@ -372,6 +372,12 @@ npm run build
 sudo systemctl restart fuel-dashboard fuel-collector
 ```
 
+The GitHub Actions workflow (`.github/workflows/deploy.yml`) does this automatically on every push to `main` over SSH (secrets: `SSH_HOST`, `SSH_USER`, and `SSH_KEY` or `SSH_PASSWORD`). It needs passwordless sudo for the restart; on the server run `sudo visudo -f /etc/sudoers.d/fuel-deploy` and add:
+
+```
+fuel ALL=(root) NOPASSWD: /usr/bin/systemctl restart fuel-dashboard fuel-collector, /usr/bin/systemctl is-active fuel-dashboard fuel-collector
+```
+
 ### Notes
 
 - The collector has no listening port of its own and is never exposed through Nginx — only

@@ -1,0 +1,36 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-main:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Deploy Main to Remote Server using SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/fuel
+            echo "Pulling latest changes (keeping server-side roster edits)..."
+            git pull --ff-only --autostash
+            echo "Installing dependencies..."
+            npm install
+            echo "Building..."
+            npm run build
+            echo "Restarting services..."
+            # Requires passwordless sudo for these commands (see README, "Updating the app later")
+            sudo -n systemctl restart fuel-dashboard fuel-collector
+            sudo -n systemctl is-active fuel-dashboard fuel-collector
+            echo "Deployment completed successfully."
