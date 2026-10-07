@@ -2,10 +2,14 @@
 
 import { useMemo, useState } from "react";
 import FuelRequestItem from "@/components/FuelRequestItem";
-import type { FuelRequestHistoryEntry } from "@/types/fuelRequest";
+import type { FuelRequestRecord } from "@/types/fuelRequest";
+import type { RequestPatch } from "@/lib/requestActions";
 
 interface HistoryModalProps {
-  history: FuelRequestHistoryEntry[];
+  history: FuelRequestRecord[];
+  myTruck: string | null;
+  myFueler: string | null;
+  onUpdate: (requestId: number, patch: RequestPatch) => void;
   onClose: () => void;
 }
 
@@ -31,17 +35,17 @@ function dayLabel(key: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export default function HistoryModal({ history, onClose }: HistoryModalProps) {
+export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onClose }: HistoryModalProps) {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const days = useMemo(() => {
-    const keys = new Set(history.map((entry) => dayKey(entry.COMPLETED_AT)));
+    const keys = new Set(history.map((entry) => dayKey(entry.completedAt ?? entry.createdAt)));
     return [...keys].sort((a, b) => (a < b ? 1 : -1));
   }, [history]);
 
   const visibleHistory = useMemo(() => {
     if (!selectedDay) return history;
-    return history.filter((entry) => dayKey(entry.COMPLETED_AT) === selectedDay);
+    return history.filter((entry) => dayKey(entry.completedAt ?? entry.createdAt) === selectedDay);
   }, [history, selectedDay]);
 
   return (
@@ -115,7 +119,13 @@ export default function HistoryModal({ history, onClose }: HistoryModalProps) {
         ) : (
           <ul className="space-y-3">
             {visibleHistory.map((entry) => (
-              <FuelRequestItem key={entry.REQUEST_ID} request={entry} completedAt={entry.COMPLETED_AT} />
+              <FuelRequestItem
+                key={entry.requestId}
+                request={entry}
+                myTruck={myTruck}
+                myFueler={myFueler}
+                onUpdate={onUpdate}
+              />
             ))}
           </ul>
         )}

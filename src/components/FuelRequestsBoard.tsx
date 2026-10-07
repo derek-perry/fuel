@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useSWR from "swr";
 import FuelRequestItem from "@/components/FuelRequestItem";
 import HistoryModal from "@/components/HistoryModal";
 import RefreshControl from "@/components/RefreshControl";
 import ThemeToggle from "@/components/ThemeToggle";
+import IdentitySelector from "@/components/IdentitySelector";
 import { fetcher } from "@/lib/fetcher";
 import { useFuelRequestHistory } from "@/lib/history";
-import type { FuelRequest } from "@/types/fuelRequest";
+import { useIdentity } from "@/lib/identity";
+import { patchRequest, type RequestPatch } from "@/lib/requestActions";
+import trucks from "@/data/trucks.json";
+import fuelers from "@/data/fuelers.json";
+import type { FuelRequestRecord } from "@/types/fuelRequest";
 
 interface RequestsResponse {
   hasAccess: boolean;
-  requests: FuelRequest[];
+  requests: FuelRequestRecord[];
 }
 
 const POLL_INTERVAL_MS = Number(process.env.NEXT_PUBLIC_POLL_INTERVAL_MS ?? 3000);
@@ -24,6 +29,7 @@ interface FuelRequestsBoardProps {
 export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardProps) {
   const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const { myTruck, myFueler, setMyTruck, setMyFueler } = useIdentity();
   const { data, error, isLoading, isValidating, mutate } = useSWR<RequestsResponse>("/api/erau/requests", fetcher, {
     onSuccess: (payload) => {
       setLastFetchedAt(new Date());
@@ -43,10 +49,19 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
   }, [lastFetchedAt, mutate]);
 
   const requests = data?.requests.toSorted((a, b) =>
-    new Date(a.DATE_CREATED).getTime() - new Date(b.DATE_CREATED).getTime(),
+    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 
-  const history = useFuelRequestHistory(requests);
+  const { history, mutate: mutateHistory } = useFuelRequestHistory();
+
+  const handleUpdate = useCallback(
+    async (requestId: number, patch: RequestPatch) => {
+      await patchRequest(requestId, patch);
+      mutate();
+      mutateHistory();
+    },
+    [mutate, mutateHistory]
+  );
 
   return (
     <main className="flex flex-col flex-1 gap-4 mx-auto p-6 w-full max-w-3xl">
@@ -54,6 +69,15 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
         <h1 className="max-[370px]:hidden font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard{requests?.length ? ` (${requests.length})` : ""}</h1>
 
         <div className="flex flex-row items-center gap-6">
+          <IdentitySelector
+            trucks={trucks}
+            fuelers={fuelers}
+            myTruck={myTruck}
+            myFueler={myFueler}
+            onChangeTruck={setMyTruck}
+            onChangeFueler={setMyFueler}
+          />
+
           <RefreshControl
             error={!!error}
             isLoading={isLoading || isValidating}
@@ -72,7 +96,15 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
         </div>
       ) : (
         <ul className="space-y-3">
-          {requests?.map((request) => <FuelRequestItem key={request.REQUEST_ID} request={request} />)}
+          {requests?.map((request) => (
+            <FuelRequestItem
+              key={request.requestId}
+              request={request}
+              myTruck={myTruck}
+              myFueler={myFueler}
+              onUpdate={handleUpdate}
+            />
+          ))}
         </ul>
       )}
 
@@ -84,7 +116,15 @@ export default function FuelRequestsBoard({ onAccessLost }: FuelRequestsBoardPro
         History{history.length > 0 ? ` (${history.length})` : ""}
       </button>
 
-      {showHistory && <HistoryModal history={history} onClose={() => setShowHistory(false)} />}
+      {showHistory && (
+        <HistoryModal
+          history={history}
+          myTruck={myTruck}
+          myFueler={myFueler}
+          onUpdate={handleUpdate}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
     </main>
   );
 }

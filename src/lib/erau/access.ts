@@ -1,5 +1,5 @@
 import { dashboardAccess, dashboardAccessStatus } from "./api";
-import { readStoredAccessCode, clearStoredAccessCode } from "./cookies";
+import { erauConfig } from "./config";
 import { type CookieMap } from "./cookieJar";
 
 export interface AccessCheckResult {
@@ -7,8 +7,8 @@ export interface AccessCheckResult {
   cookies: CookieMap;
 }
 
-// Checks upstream access, silently re-submitting a previously saved access code if the
-// upstream session no longer reports access, so the user isn't re-prompted every time it expires.
+// Checks upstream access, silently re-submitting the server-configured ERAU_FUELER_ACCESS_CODE
+// if the upstream session no longer reports access (e.g. after the OAM session expires).
 export async function checkDashboardAccess(cookies: CookieMap): Promise<AccessCheckResult> {
   const status = await dashboardAccessStatus("Fueler", cookies);
   const merged = { ...cookies, ...status.cookies };
@@ -17,19 +17,11 @@ export async function checkDashboardAccess(cookies: CookieMap): Promise<AccessCh
     return { hasAccess: true, cookies: merged };
   }
 
-  const savedCode = await readStoredAccessCode();
-  if (!savedCode) {
+  const code = erauConfig.fuelerAccessCode;
+  if (!code) {
     return { hasAccess: false, cookies: merged };
   }
 
-  const accessResult = await dashboardAccess("Fueler", savedCode, merged);
-  const withAccessCookies = { ...merged, ...accessResult.cookies };
-
-  if (accessResult.data === true) {
-    return { hasAccess: true, cookies: withAccessCookies };
-  }
-
-  // Saved code no longer works upstream — stop retrying with it.
-  await clearStoredAccessCode();
-  return { hasAccess: false, cookies: withAccessCookies };
+  const accessResult = await dashboardAccess("Fueler", code, merged);
+  return { hasAccess: accessResult.data === true, cookies: { ...merged, ...accessResult.cookies } };
 }

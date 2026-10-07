@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# sqlite db (collector-written, machine-local)
+/data/
+
 # next.js
 /.next/
 /out/
@@ -22,6 +25,10 @@
 
 # misc
 .DS_Store
+
+# keys and certificates
+/key
+/key-old
 *.pem
 
 # debug

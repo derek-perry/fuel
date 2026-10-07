@@ -123,35 +123,39 @@ export interface FuelRequest {
   [key: string]: unknown;
 }
 
-// Minimal subset of FuelRequest fields needed to render a request card. FuelRequest is
-// structurally assignable to this, so FuelRequestItem/history code can accept either without
-// storing (or requiring) the full upstream payload.
-export interface FuelRequestSummary {
-  REQUEST_ID: number;
-  DATE_CREATED: string;
-  INITIATOR: {
-    USER_ID: number;
-  };
-  ACTIVITY?: unknown;
-  RESOURCE: {
-    NAME: string;
-    MODEL: string;
-  };
-  DETAILS: {
-    OIL: number;
-    PARKING_SPOT: {
-      NAME: string;
-    };
-    THIRD_PARTY_DATA: {
-      REQUESTED_SERVICE: string;
-      REQUESTED_AMOUNT: string;
-    };
-  };
+// "auto" = ERAU's own automated system (INITIATOR.USER_ID === 2) created the request; "conversion"
+// = an auto request that a pilot has since added activity on top of; "pilot" = pilot-initiated.
+// Computed once by the collector (see `src/lib/erau/summary.ts`) and stored, not re-derived.
+export type RequestType = "auto" | "conversion" | "pilot";
+
+// Who/when a request was claimed or marked fueled by a dashboard user — local-only, unrelated to
+// ERAU's own completion flow. Independent of each other: a different truck can mark something
+// fueled than whichever truck claimed it.
+export interface ClaimInfo {
+  truck: string;
+  fueler: string;
 }
 
-// A request that disappeared from the live upstream feed (completed/cancelled/etc). Upstream
-// has no history endpoint, so `COMPLETED_AT` is set locally to when we first noticed it missing,
-// not an upstream timestamp.
-export interface FuelRequestHistoryEntry extends FuelRequestSummary {
-  COMPLETED_AT: string;
+// The normalized, flat shape the dashboard actually renders — backed 1:1 by the `requests` SQLite
+// table (see `src/lib/db.ts`). Used for BOTH the live list and history: `completedAt === null`
+// means still live. Claim/fuel state is live-joined from the same row, so it stays editable even
+// after a request completes (not frozen into a separate immutable history blob).
+export interface FuelRequestRecord {
+  requestId: number;
+  tailNumber: string;
+  planeType: string;
+  parkingSpot: string;
+  requestType: RequestType;
+  fuelRequested: boolean;
+  fuelAmountType: string | null;
+  fuelAmount: string | null;
+  oilRequested: boolean;
+  createdAt: string;
+  completedAt: string | null;
+  claimedAt: string | null;
+  claimedTruck: string | null;
+  claimedFueler: string | null;
+  fueledAt: string | null;
+  fueledTruck: string | null;
+  fueledFueler: string | null;
 }

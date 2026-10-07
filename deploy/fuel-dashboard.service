@@ -1,0 +1,15 @@
+[Unit]
+Description=Fuel dashboard (Next.js)
+After=network.target
+
+[Service]
+Type=simple
+User=fuel
+WorkingDirectory=/opt/fuel
+EnvironmentFile=/opt/fuel/.env
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
