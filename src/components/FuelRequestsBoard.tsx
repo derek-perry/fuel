@@ -12,6 +12,7 @@ import { fetcher } from "@/lib/fetcher";
 import { useFuelRequestHistory } from "@/lib/history";
 import { findTruck, type Identity } from "@/lib/identity";
 import { patchRequest, type RequestPatch } from "@/lib/requestActions";
+import { useNewRequestSound } from "@/lib/useNewRequestSound";
 import trucks from "@/data/trucks.json";
 import fuelers from "@/data/fuelers.json";
 import type { FuelRequestRecord } from "@/types/fuelRequest";
@@ -53,6 +54,7 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
   }, [lastFetchedAt, mutate]);
 
   const requests = data ? sortByCreatedAt(data.requests, sortOrder) : undefined;
+  useNewRequestSound(data?.requests);
 
   const { history, mutate: mutateHistory } = useFuelRequestHistory();
 
