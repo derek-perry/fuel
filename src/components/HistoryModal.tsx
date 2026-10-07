@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import FuelRequestItem from "@/components/FuelRequestItem";
+import SortToggle, { sortByCreatedAt, type SortOrder } from "@/components/SortToggle";
 import type { FuelRequestRecord } from "@/types/fuelRequest";
 import type { RequestPatch } from "@/lib/requestActions";
 
@@ -35,8 +36,20 @@ function dayLabel(key: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+// Dividers follow the list's sort key (createdAt) so each hour's requests stay contiguous.
+function hourKey(value: string): string {
+  return `${dayKey(value)}T${hourLabel(value)}`;
+}
+
+function hourLabel(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${String(date.getHours()).padStart(2, "0")}00`;
+}
+
 export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onClose }: HistoryModalProps) {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("oldest");
 
   const days = useMemo(() => {
     const keys = new Set(history.map((entry) => dayKey(entry.completedAt ?? entry.createdAt)));
@@ -44,9 +57,11 @@ export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onC
   }, [history]);
 
   const visibleHistory = useMemo(() => {
-    if (!selectedDay) return history;
-    return history.filter((entry) => dayKey(entry.completedAt ?? entry.createdAt) === selectedDay);
-  }, [history, selectedDay]);
+    const filtered = selectedDay
+      ? history.filter((entry) => dayKey(entry.completedAt ?? entry.createdAt) === selectedDay)
+      : history;
+    return sortByCreatedAt(filtered, sortOrder);
+  }, [history, selectedDay, sortOrder]);
 
   return (
     <div className="z-50 fixed inset-0 flex justify-center items-center bg-black/40 p-6" onClick={onClose}>
@@ -114,19 +129,37 @@ export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onC
           )
         )}
 
+        {visibleHistory.length > 1 && (
+          <SortToggle order={sortOrder} onChange={setSortOrder} className="self-start text-xs" />
+        )}
+
         {visibleHistory.length === 0 ? (
           <p className="text-zinc-500 dark:text-zinc-400 text-sm">No completed requests yet.</p>
         ) : (
           <ul className="space-y-3">
-            {visibleHistory.map((entry) => (
-              <FuelRequestItem
-                key={entry.requestId}
-                request={entry}
-                myTruck={myTruck}
-                myFueler={myFueler}
-                onUpdate={onUpdate}
-              />
-            ))}
+            {visibleHistory.map((entry, index) => {
+              const key = hourKey(entry.createdAt);
+              const showDivider = index === 0 || key !== hourKey(visibleHistory[index - 1].createdAt);
+              return (
+                <Fragment key={entry.requestId}>
+                  {showDivider && (
+                    <li
+                      aria-hidden="true"
+                      className="pt-1 font-medium text-[11px] text-zinc-400 dark:text-zinc-500 tracking-wider"
+                    >
+                      {selectedDay ? "" : `${dayLabel(dayKey(entry.createdAt))} · `}
+                      {hourLabel(entry.createdAt)}
+                    </li>
+                  )}
+                  <FuelRequestItem
+                    request={entry}
+                    myTruck={myTruck}
+                    myFueler={myFueler}
+                    onUpdate={onUpdate}
+                  />
+                </Fragment>
+              );
+            })}
           </ul>
         )}
       </div>

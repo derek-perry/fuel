@@ -7,6 +7,7 @@ import HistoryModal from "@/components/HistoryModal";
 import RefreshControl from "@/components/RefreshControl";
 import ThemeToggle from "@/components/ThemeToggle";
 import IdentityModal from "@/components/IdentityModal";
+import SortToggle, { sortByCreatedAt, type SortOrder } from "@/components/SortToggle";
 import { fetcher } from "@/lib/fetcher";
 import { useFuelRequestHistory } from "@/lib/history";
 import { findTruck, type Identity } from "@/lib/identity";
@@ -32,6 +33,7 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
   const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showIdentityModal, setShowIdentityModal] = useState(false);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("oldest");
   const { data, error, isLoading, isValidating, mutate } = useSWR<RequestsResponse>("/api/erau/requests", fetcher, {
     onSuccess: (payload) => {
       setLastFetchedAt(new Date());
@@ -50,9 +52,7 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
     return () => clearTimeout(timer);
   }, [lastFetchedAt, mutate]);
 
-  const requests = data?.requests.toSorted((a, b) =>
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
+  const requests = data ? sortByCreatedAt(data.requests, sortOrder) : undefined;
 
   const { history, mutate: mutateHistory } = useFuelRequestHistory();
 
@@ -83,15 +83,18 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
             <ThemeToggle />
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowIdentityModal(true)}
-          className="flex justify-center items-center bg-white hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 shadow-md px-2 py-1.5 border border-zinc-200 dark:border-zinc-600 rounded-xl text-zinc-600 dark:text-zinc-300 cursor-pointer"
-        >
-          {myTruck || myFueler
-            ? [findTruck(trucks, myTruck)?.identifier, myFueler].filter(Boolean).join(" · ")
-            : "Who are you?"}
-        </button>
+        <div className="flex flex-row flex-wrap justify-between max-[350px]:justify-center items-center gap-3 w-full">
+          <button
+            type="button"
+            onClick={() => setShowIdentityModal(true)}
+            className="flex justify-center items-center bg-white hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 shadow-md px-2 py-1.5 border border-zinc-200 dark:border-zinc-600 rounded-xl text-zinc-600 dark:text-zinc-300 cursor-pointer"
+          >
+            {myTruck || myFueler
+              ? [findTruck(trucks, myTruck)?.identifier, myFueler].filter(Boolean).join(" · ")
+              : "Who are you?"}
+          </button>
+          <SortToggle order={sortOrder} onChange={setSortOrder} className="shadow-md" />
+        </div>
       </header>
 
       {data && data.requests.length === 0 ? (
