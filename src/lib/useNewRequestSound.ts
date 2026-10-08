@@ -8,7 +8,13 @@ const SOUND_SRC = "/sounds/new-request.wav";
 
 // Plays a sound when a request id appears that wasn't in a previous snapshot.
 // The first snapshot only seeds the known ids so existing requests stay silent.
-export function useNewRequestSound(requests: FuelRequestRecord[] | undefined) {
+// When disabled, snapshots are still tracked so unmuting doesn't replay old requests.
+export function useNewRequestSound(requests: FuelRequestRecord[] | undefined, enabled = true) {
+  const enabledRef = useRef(enabled);
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
+
   const knownIds = useRef<Set<number> | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
 
@@ -18,7 +24,7 @@ export function useNewRequestSound(requests: FuelRequestRecord[] | undefined) {
     const ids = new Set(requests.map((r) => r.requestId));
     const previous = knownIds.current;
     knownIds.current = ids;
-    if (!previous) return;
+    if (!previous || !enabledRef.current) return;
 
     for (const id of ids) {
       if (!previous.has(id)) {

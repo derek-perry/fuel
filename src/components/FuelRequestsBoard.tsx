@@ -5,6 +5,7 @@ import useSWR from "swr";
 import FuelRequestItem from "@/components/FuelRequestItem";
 import HistoryModal from "@/components/HistoryModal";
 import RefreshControl from "@/components/RefreshControl";
+import SoundToggle from "@/components/SoundToggle";
 import ThemeToggle from "@/components/ThemeToggle";
 import IdentityModal from "@/components/IdentityModal";
 import SortToggle, { sortByCreatedAt, type SortOrder } from "@/components/SortToggle";
@@ -12,6 +13,7 @@ import { fetcher } from "@/lib/fetcher";
 import { useFuelRequestHistory } from "@/lib/history";
 import { findTruck, type Identity } from "@/lib/identity";
 import { patchRequest, type RequestPatch } from "@/lib/requestActions";
+import { useSoundEnabled } from "@/lib/soundPreference";
 import { useNewRequestSound } from "@/lib/useNewRequestSound";
 import trucks from "@/data/trucks.json";
 import fuelers from "@/data/fuelers.json";
@@ -54,7 +56,8 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
   }, [lastFetchedAt, mutate]);
 
   const requests = data ? sortByCreatedAt(data.requests, sortOrder) : undefined;
-  useNewRequestSound(data?.requests);
+  const { soundEnabled, setSoundEnabled } = useSoundEnabled();
+  useNewRequestSound(data?.requests, soundEnabled);
 
   const { history, mutate: mutateHistory } = useFuelRequestHistory();
 
@@ -70,8 +73,8 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
   return (
     <main className="flex flex-col flex-1 gap-4 mx-auto p-6 w-full max-w-4xl">
       <header className="flex flex-col items-center gap-4 w-full">
-        <div className="flex flex-row justify-between max-[460px]:justify-center items-center gap-6 w-full">
-          <h1 className="max-[460px]:hidden font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard{requests?.length ? ` (${requests.length})` : ""}</h1>
+        <div className="flex flex-row justify-between max-[492px]:justify-center items-center gap-6 w-full">
+          <h1 className="max-[492px]:hidden font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard{requests?.length ? ` (${requests.length})` : ""}</h1>
 
           <div className="flex flex-row items-center gap-6">
             <RefreshControl
@@ -82,7 +85,10 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
               onRefresh={() => mutate()}
             />
 
-            <ThemeToggle />
+            <div className="flex flex-row items-center gap-3">
+              <SoundToggle enabled={soundEnabled} onChange={setSoundEnabled} />
+              <ThemeToggle />
+            </div>
           </div>
         </div>
         <div className="flex flex-row flex-wrap justify-between max-[350px]:justify-center items-center gap-3 w-full">

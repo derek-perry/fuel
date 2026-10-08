@@ -147,7 +147,7 @@ export default function FuelRequestItem({ request, myTruck, myFueler, onUpdate }
         className={`${sideButtonClasses} ${request.claimedTruck ? "" : idleSideButtonClasses}`}
         style={request.claimedTruck ? solidColorStyle(claimTruck?.color) : undefined}
       >
-        <span>{request.claimedTruck ? "Claimed" : "Claim"}</span>
+        <span>{request.claimedTruck ? "Claimed" : "Mark Claimed"}</span>
         {request.claimedTruck && (
           <span className="font-mono font-bold text-sm @2xl:text-base">{claimTruck?.identifier ?? request.claimedTruck}</span>
         )}
@@ -218,7 +218,7 @@ export default function FuelRequestItem({ request, myTruck, myFueler, onUpdate }
         className={`${sideButtonClasses} ${request.fueledTruck ? "" : idleSideButtonClasses}`}
         style={request.fueledTruck ? solidColorStyle(fueledTruck?.color) : undefined}
       >
-        <span>{request.fueledTruck ? "Fueled" : "Mark fueled"}</span>
+        <span>{request.fueledTruck ? "Fueled" : "Mark Fueled"}</span>
         {request.fueledTruck && (
           <span className="font-mono font-bold text-sm @2xl:text-base">{fueledTruck?.identifier ?? request.fueledTruck}</span>
         )}
