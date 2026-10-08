@@ -49,7 +49,7 @@ function hourLabel(value: string): string {
 
 export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onClose }: HistoryModalProps) {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<SortOrder>("oldest");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
 
   const days = useMemo(() => {
     const keys = new Set(history.map((entry) => dayKey(entry.completedAt ?? entry.createdAt)));
@@ -62,6 +62,15 @@ export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onC
       : history;
     return sortByCreatedAt(filtered, sortOrder);
   }, [history, selectedDay, sortOrder]);
+
+  const hourCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const entry of visibleHistory) {
+      const key = hourKey(entry.createdAt);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  }, [visibleHistory]);
 
   return (
     <div className="z-50 fixed inset-0 flex justify-center items-center bg-black/40 p-6" onClick={onClose}>
@@ -149,6 +158,7 @@ export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onC
                     >
                       {selectedDay ? "" : `${dayLabel(dayKey(entry.createdAt))} · `}
                       {hourLabel(entry.createdAt)}
+                      {` · ${hourCounts.get(key)} ${hourCounts.get(key) === 1 ? "request" : "requests"}`}
                     </li>
                   )}
                   <FuelRequestItem
