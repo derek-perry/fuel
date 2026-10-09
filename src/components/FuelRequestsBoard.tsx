@@ -128,7 +128,7 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
         onClick={() => setShowHistory(true)}
         className="self-end bg-white hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 shadow-md px-4 py-2 border border-zinc-200 dark:border-zinc-600 rounded-full text-zinc-600 dark:text-zinc-300 text-sm cursor-pointer"
       >
-        History{history.length > 0 ? ` (${history.length})` : ""}
+        History
       </button>
 
       {showHistory && (
