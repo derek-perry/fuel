@@ -1,14 +1,14 @@
 "use client";
 
+import { parseErauDate } from "@/lib/formatTime";
 import type { FuelRequestRecord } from "@/types/fuelRequest";
 
 export type SortOrder = "oldest" | "newest";
 
 export function sortByCreatedAt(requests: FuelRequestRecord[], order: SortOrder): FuelRequestRecord[] {
   const direction = order === "oldest" ? 1 : -1;
-  return requests.toSorted(
-    (a, b) => direction * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
-  );
+  const time = (value: string) => parseErauDate(value)?.getTime() ?? 0;
+  return requests.toSorted((a, b) => direction * (time(a.createdAt) - time(b.createdAt)));
 }
 
 interface SortToggleProps {

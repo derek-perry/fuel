@@ -1,5 +1,5 @@
 // Upstream timestamps look like "2026-09-20 01:29:30.835000 -04:00"; normalize to ISO-8601 so `Date` parses reliably.
-function parseErauDate(value: string): Date | null {
+export function parseErauDate(value: string): Date | null {
   if (!value) return null;
   const normalized = value
     .trim()

@@ -64,8 +64,7 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
   const handleUpdate = useCallback(
     async (requestId: number, patch: RequestPatch) => {
       await patchRequest(requestId, patch);
-      mutate();
-      mutateHistory();
+      await Promise.all([mutate(), mutateHistory()]);
     },
     [mutate, mutateHistory]
   );
@@ -73,10 +72,14 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
   return (
     <main className="flex flex-col flex-1 gap-4 mx-auto p-6 w-full max-w-4xl">
       <header className="flex flex-col items-center gap-4 w-full">
-        <div className="flex flex-row justify-between max-[492px]:justify-center items-center gap-6 w-full">
-          <h1 className="max-[492px]:hidden font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard{requests?.length ? ` (${requests.length})` : ""}</h1>
+        <div className={"flex flex-row justify-between items-center gap-6 w-full" + (requests?.length ? "" : " justify-center")}>
+          {requests?.length ? (
+            <h1 className="font-semibold text-zinc-900 dark:text-zinc-100 text-lg"><span className="max-[492px]:hidden">Fueler Dashboard - </span>{requests.length}<span className="min-[492px]:hidden text-sm"> Requests</span></h1>
+          ) : (
+            <h1 className="font-semibold text-zinc-900 dark:text-zinc-100 text-lg">Fueler Dashboard</h1>
+          )}
 
-          <div className="flex flex-row items-center gap-6">
+          <div className="flex flex-row max-[492px]:flex-col items-center gap-6 max-[492px]:gap-3">
             <RefreshControl
               error={!!error}
               isLoading={isLoading || isValidating}

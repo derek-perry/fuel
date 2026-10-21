@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState } from "react";
 import FuelRequestItem from "@/components/FuelRequestItem";
 import SortToggle, { sortByCreatedAt, type SortOrder } from "@/components/SortToggle";
+import { parseErauDate } from "@/lib/formatTime";
 import type { FuelRequestRecord } from "@/types/fuelRequest";
 import type { RequestPatch } from "@/lib/requestActions";
 
@@ -10,7 +11,7 @@ interface HistoryModalProps {
   history: FuelRequestRecord[];
   myTruck: string | null;
   myFueler: string | null;
-  onUpdate: (requestId: number, patch: RequestPatch) => void;
+  onUpdate: (requestId: number, patch: RequestPatch) => Promise<void>;
   onClose: () => void;
 }
 
@@ -18,21 +19,26 @@ interface HistoryModalProps {
 const MAX_DAY_BUTTONS = 6;
 
 // Local (not UTC) day key so entries group by the day the user actually sees them completed on.
-function dayKey(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+function dayKeyFromDate(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function dayKey(value: string): string {
+  const date = parseErauDate(value);
+  return date ? dayKeyFromDate(date) : value;
 }
 
 function dayLabel(key: string): string {
   const [year, month, day] = key.split("-").map(Number);
   const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return key;
+
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
 
-  if (dayKey(date.toISOString()) === dayKey(today.toISOString())) return "Today";
-  if (dayKey(date.toISOString()) === dayKey(yesterday.toISOString())) return "Yesterday";
+  if (key === dayKeyFromDate(today)) return "Today";
+  if (key === dayKeyFromDate(yesterday)) return "Yesterday";
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
@@ -42,8 +48,8 @@ function hourKey(value: string): string {
 }
 
 function hourLabel(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
+  const date = parseErauDate(value);
+  if (!date) return "";
   return `${String(date.getHours()).padStart(2, "0")}00`;
 }
 

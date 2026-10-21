@@ -14,7 +14,16 @@ interface FuelRequestItemProps {
   request: FuelRequestRecord;
   myTruck: string | null;
   myFueler: string | null;
-  onUpdate: (requestId: number, patch: RequestPatch) => void;
+  onUpdate: (requestId: number, patch: RequestPatch) => Promise<void>;
+}
+
+function Spinner() {
+  return (
+    <svg aria-hidden="true" className="size-4 animate-spin" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" d="M4 12a8 8 0 0 1 8-8" stroke="currentColor" strokeLinecap="round" strokeWidth="4" />
+    </svg>
+  );
 }
 
 function FuelIcon({ service, customAmount }: { service: string; customAmount?: string }) {
@@ -78,6 +87,8 @@ type PendingAction = "claim" | "fueled" | null;
 
 export default function FuelRequestItem({ request, myTruck, myFueler, onUpdate }: FuelRequestItemProps) {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [savingAction, setSavingAction] = useState<PendingAction>(null);
+  const isSaving = savingAction !== null;
 
   const isAutoRequest = request.requestType === "auto";
   const isConversion = request.requestType === "conversion";
@@ -86,25 +97,39 @@ export default function FuelRequestItem({ request, myTruck, myFueler, onUpdate }
     request.planeType === "DA42 NG" ? "Diamond" : request.planeType === "172S NAV III" ? "Cessna" : request.planeType;
 
   // Acting with a full identity on an unheld mark is one click; anything else needs the modal.
+  // Stays in the saving state until the update and the follow-up refetch have finished.
+  async function save(action: Exclude<PendingAction, null>, patch: RequestPatch) {
+    setSavingAction(action);
+    try {
+      await onUpdate(request.requestId, patch);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSavingAction(null);
+    }
+  }
+
   function handleClaimClick() {
+    if (isSaving) return;
     if (!request.claimedTruck && myTruck && myFueler) {
-      onUpdate(request.requestId, { claim: { truck: myTruck, fueler: myFueler } });
+      void save("claim", { claim: { truck: myTruck, fueler: myFueler } });
       return;
     }
     setPendingAction("claim");
   }
 
   function handleFueledClick() {
+    if (isSaving) return;
     if (!request.fueledTruck && myTruck && myFueler) {
-      onUpdate(request.requestId, { fueled: { truck: myTruck, fueler: myFueler } });
+      void save("fueled", { fueled: { truck: myTruck, fueler: myFueler } });
       return;
     }
     setPendingAction("fueled");
   }
 
   function handleModalResolve(value: ClaimInfo | null) {
-    if (!pendingAction) return;
-    onUpdate(request.requestId, pendingAction === "claim" ? { claim: value } : { fueled: value });
+    if (!pendingAction || isSaving) return;
+    void save(pendingAction, pendingAction === "claim" ? { claim: value } : { fueled: value });
     setPendingAction(null);
   }
 
@@ -125,6 +150,7 @@ export default function FuelRequestItem({ request, myTruck, myFueler, onUpdate }
 
   const sideButtonClasses =
     "flex flex-col justify-center items-center gap-0.5 px-0.5 w-14 @2xl:w-16 shrink-0 font-semibold text-[11px] @2xl:text-xs text-center leading-tight transition-colors cursor-pointer";
+  const disabledClasses = "disabled:cursor-wait disabled:hover:bg-white/70 dark:disabled:hover:bg-zinc-800/70";
   const idleSideButtonClasses =
     "bg-white/70 hover:bg-white dark:bg-zinc-800/70 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300";
 
@@ -143,12 +169,15 @@ export default function FuelRequestItem({ request, myTruck, myFueler, onUpdate }
       <button
         type="button"
         onClick={handleClaimClick}
+        disabled={isSaving}
+        aria-busy={savingAction === "claim"}
         aria-label={request.claimedTruck ? `Claimed by ${claimTruck?.identifier ?? request.claimedTruck}` : "Claim"}
-        className={`${sideButtonClasses} ${request.claimedTruck ? "" : idleSideButtonClasses}`}
+        className={`${sideButtonClasses} ${request.claimedTruck ? "" : idleSideButtonClasses} ${disabledClasses}`}
         style={request.claimedTruck ? solidColorStyle(claimTruck?.color) : undefined}
       >
-        <span>{request.claimedTruck ? "Claimed" : "Mark Claimed"}</span>
-        {request.claimedTruck && (
+        {savingAction === "claim" && <Spinner />}
+        <span>{savingAction === "claim" ? "Saving…" : request.claimedTruck ? "Claimed" : "Mark Claimed"}</span>
+        {request.claimedTruck && savingAction !== "claim" && (
           <span className="font-mono font-bold text-sm @2xl:text-base">{claimTruck?.identifier ?? request.claimedTruck}</span>
         )}
       </button>
@@ -214,12 +243,15 @@ export default function FuelRequestItem({ request, myTruck, myFueler, onUpdate }
       <button
         type="button"
         onClick={handleFueledClick}
+        disabled={isSaving}
+        aria-busy={savingAction === "fueled"}
         aria-label={request.fueledTruck ? `Fueled by ${fueledTruck?.identifier ?? request.fueledTruck}` : "Mark fueled"}
-        className={`${sideButtonClasses} ${request.fueledTruck ? "" : idleSideButtonClasses}`}
+        className={`${sideButtonClasses} ${request.fueledTruck ? "" : idleSideButtonClasses} ${disabledClasses}`}
         style={request.fueledTruck ? solidColorStyle(fueledTruck?.color) : undefined}
       >
-        <span>{request.fueledTruck ? "Fueled" : "Mark Fueled"}</span>
-        {request.fueledTruck && (
+        {savingAction === "fueled" && <Spinner />}
+        <span>{savingAction === "fueled" ? "Saving…" : request.fueledTruck ? "Fueled" : "Mark Fueled"}</span>
+        {request.fueledTruck && savingAction !== "fueled" && (
           <span className="font-mono font-bold text-sm @2xl:text-base">{fueledTruck?.identifier ?? request.fueledTruck}</span>
         )}
       </button>
@@ -231,6 +263,8 @@ export default function FuelRequestItem({ request, myTruck, myFueler, onUpdate }
             current={pendingCurrent}
             myTruck={myTruck}
             myFueler={myFueler}
+            claimedAt={request.claimedAt}
+            fueledAt={request.fueledAt}
             trucks={trucks}
             fuelers={fuelers}
             onResolve={handleModalResolve}

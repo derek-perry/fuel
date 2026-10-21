@@ -12,6 +12,8 @@ interface ClaimConfirmModalProps {
   current: { truck: string; fueler: string | null } | null;
   myTruck: string | null;
   myFueler: string | null;
+  claimedAt: Date | string | null;
+  fueledAt: Date | string | null;
   trucks: Truck[];
   fuelers: Fueler[];
   // `null` clears the claim/fueled mark.
@@ -24,6 +26,8 @@ export default function ClaimConfirmModal({
   current,
   myTruck,
   myFueler,
+  claimedAt,
+  fueledAt,
   trucks,
   fuelers,
   onResolve,
@@ -60,6 +64,16 @@ export default function ClaimConfirmModal({
                 {currentLabel}
               </span>
               {isMine ? " (you)." : "."}
+              {claimedAt && actionLabel === "claimed" && (
+                <span className="block text-zinc-500 dark:text-zinc-400 text-xs">
+                  Claimed at: {new Date(claimedAt).toLocaleString()}
+                </span>
+              )}
+              {fueledAt && actionLabel === "fueled" && (
+                <span className="block text-zinc-500 dark:text-zinc-400 text-xs">
+                  Fueled at: {new Date(fueledAt).toLocaleString()}
+                </span>
+              )}
             </>
           ) : (
             <>Not {actionLabel} yet. Pick who is {actionLabel === "claimed" ? "claiming" : "fueling"} it.</>
