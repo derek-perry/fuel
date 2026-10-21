@@ -6,6 +6,7 @@ import SortToggle, { sortByCreatedAt, type SortOrder } from "@/components/SortTo
 import { parseErauDate } from "@/lib/formatTime";
 import { dayKeyFromDate, useFuelRequestHistoryDay, useFuelRequestHistoryDays } from "@/lib/history";
 import type { RequestPatch } from "@/lib/requestActions";
+import type { FuelRequestRecord } from "@/types/fuelRequest";
 
 interface HistoryModalProps {
   myTruck: string | null;
@@ -14,8 +15,8 @@ interface HistoryModalProps {
   onClose: () => void;
 }
 
-// Beyond this many distinct days, a button row would wrap excessively — switch to a dropdown.
-const MAX_DAY_BUTTONS = 6;
+const dayNavButtonClass =
+  "flex justify-center items-center hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 border border-zinc-300 dark:border-zinc-700 rounded-md w-8 h-7 text-zinc-600 dark:text-zinc-300 disabled:cursor-not-allowed cursor-pointer";
 
 function dayKey(value: string): string {
   const date = parseErauDate(value);
@@ -33,7 +34,12 @@ function dayLabel(key: string): string {
 
   if (key === dayKeyFromDate(today)) return "Today";
   if (key === dayKeyFromDate(yesterday)) return "Yesterday";
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return date.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    ...(date.getFullYear() !== today.getFullYear() && { year: "numeric" }),
+  });
 }
 
 // Dividers follow the list's sort key (createdAt) so each hour's requests stay contiguous.
@@ -45,6 +51,57 @@ function hourLabel(value: string): string {
   const date = parseErauDate(value);
   if (!date) return "";
   return `${String(date.getHours()).padStart(2, "0")}00`;
+}
+
+function formatDuration(ms: number): string {
+  const totalMinutes = Math.round(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+function DayStats({ requests }: { requests: FuelRequestRecord[] }) {
+  const stats = useMemo(() => {
+    const count = (predicate: (request: FuelRequestRecord) => boolean) => requests.filter(predicate).length;
+
+    // Completion is detected by the request disappearing upstream, so this is an approximate
+    // "time open" rather than an exact service time.
+    const durations = requests
+      .map((request) => {
+        const created = parseErauDate(request.createdAt);
+        const completed = request.completedAt ? new Date(request.completedAt) : null;
+        return created && completed ? completed.getTime() - created.getTime() : null;
+      })
+      .filter((ms): ms is number => ms !== null && ms >= 0);
+    const averageOpen = durations.length
+      ? formatDuration(durations.reduce((sum, ms) => sum + ms, 0) / durations.length)
+      : "—";
+
+    return [
+      { label: "Total", value: String(requests.length) },
+      { label: "Auto", value: String(count((r) => r.requestType === "auto")) },
+      { label: "Pilot", value: String(count((r) => r.requestType === "pilot")) },
+      { label: "Conversion", value: String(count((r) => r.requestType === "conversion")) },
+      { label: "Fuel", value: String(count((r) => r.fuelRequested)) },
+      { label: "Oil", value: String(count((r) => r.oilRequested)) },
+      { label: "Marked fueled", value: String(count((r) => r.fueledAt !== null)) },
+      { label: "Avg time open", value: averageOpen },
+    ];
+  }, [requests]);
+
+  return (
+    <dl className="gap-2 grid grid-cols-2 sm:grid-cols-4">
+      {stats.map(({ label, value }) => (
+        <div
+          key={label}
+          className="bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-md"
+        >
+          <dt className="text-[11px] text-zinc-500 dark:text-zinc-400">{label}</dt>
+          <dd className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
 }
 
 export default function HistoryModal({ myTruck, myFueler, onUpdate, onClose }: HistoryModalProps) {
@@ -60,6 +117,12 @@ export default function HistoryModal({ myTruck, myFueler, onUpdate, onClose }: H
   }, [serverDays, today]);
 
   const { history, isLoading, mutate: mutateDay } = useFuelRequestHistoryDay(selectedDay);
+
+  // `days` is sorted newest-first; the picker may land on a day with no history, so neighbours are
+  // found by comparison rather than by index.
+  const oldestDay = days[days.length - 1];
+  const olderDay = days.find((key) => key < selectedDay);
+  const newerDay = days.findLast((key) => key > selectedDay);
   const visibleHistory = useMemo(() => sortByCreatedAt(history ?? [], sortOrder), [history, sortOrder]);
 
   const handleUpdate = useCallback(
@@ -101,37 +164,47 @@ export default function HistoryModal({ myTruck, myFueler, onUpdate, onClose }: H
         </div>
 
         {days.length > 1 && (
-          days.length > MAX_DAY_BUTTONS ? (
-            <select
-              value={selectedDay}
-              onChange={(event) => setSelectedDay(event.target.value)}
-              aria-label="Day"
-              className="bg-white dark:bg-zinc-800 px-2.5 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded-md w-fit font-medium text-zinc-600 dark:text-zinc-300 text-xs cursor-pointer"
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => olderDay && setSelectedDay(olderDay)}
+              disabled={!olderDay}
+              aria-label="Previous day with history"
+              title="Previous day with history"
+              className={dayNavButtonClass}
             >
-              {days.map((key) => (
-                <option key={key} value={key}>
-                  {dayLabel(key)}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {days.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setSelectedDay(key)}
-                  className={`px-2.5 py-1 rounded-md border text-xs font-medium cursor-pointer ${
-                    selectedDay === key
-                      ? "bg-zinc-900 dark:bg-zinc-100 border-zinc-900 dark:border-zinc-100 text-white dark:text-zinc-900"
-                      : "bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                  }`}
-                >
-                  {dayLabel(key)}
-                </button>
-              ))}
-            </div>
-          )
+              ‹
+            </button>
+            <input
+              type="date"
+              value={selectedDay}
+              min={oldestDay}
+              max={today}
+              onChange={(event) => event.target.value && setSelectedDay(event.target.value)}
+              aria-label="Day"
+              className="bg-white dark:bg-zinc-800 px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded-md text-zinc-600 dark:text-zinc-300 text-xs cursor-pointer"
+            />
+            <button
+              type="button"
+              onClick={() => newerDay && setSelectedDay(newerDay)}
+              disabled={!newerDay}
+              aria-label="Next day with history"
+              title="Next day with history"
+              className={dayNavButtonClass}
+            >
+              ›
+            </button>
+            <span className="font-medium text-zinc-500 dark:text-zinc-400 text-xs">{dayLabel(selectedDay)}</span>
+            {selectedDay !== today && (
+              <button
+                type="button"
+                onClick={() => setSelectedDay(today)}
+                className="hover:bg-zinc-100 dark:hover:bg-zinc-800 px-2.5 py-1 border border-zinc-300 dark:border-zinc-700 rounded-md font-medium text-zinc-600 dark:text-zinc-300 text-xs cursor-pointer"
+              >
+                Today
+              </button>
+            )}
+          </div>
         )}
 
         {visibleHistory.length > 1 && (
@@ -143,31 +216,34 @@ export default function HistoryModal({ myTruck, myFueler, onUpdate, onClose }: H
         ) : visibleHistory.length === 0 ? (
           <p className="text-zinc-500 dark:text-zinc-400 text-sm">No completed requests {selectedDay === today ? "yet today" : "this day"}.</p>
         ) : (
-          <ul className="space-y-3">
-            {visibleHistory.map((entry, index) => {
-              const key = hourKey(entry.createdAt);
-              const showDivider = index === 0 || key !== hourKey(visibleHistory[index - 1].createdAt);
-              return (
-                <Fragment key={entry.requestId}>
-                  {showDivider && (
-                    <li
-                      aria-hidden="true"
-                      className="pt-1 font-medium text-[11px] text-zinc-400 dark:text-zinc-500 tracking-wider"
-                    >
-                      {hourLabel(entry.createdAt)}
-                      {` · ${hourCounts.get(key)} ${hourCounts.get(key) === 1 ? "request" : "requests"}`}
-                    </li>
-                  )}
-                  <FuelRequestItem
-                    request={entry}
-                    myTruck={myTruck}
-                    myFueler={myFueler}
-                    onUpdate={handleUpdate}
-                  />
-                </Fragment>
-              );
-            })}
-          </ul>
+          <>
+            <DayStats requests={visibleHistory} />
+            <ul className="space-y-3">
+              {visibleHistory.map((entry, index) => {
+                const key = hourKey(entry.createdAt);
+                const showDivider = index === 0 || key !== hourKey(visibleHistory[index - 1].createdAt);
+                return (
+                  <Fragment key={entry.requestId}>
+                    {showDivider && (
+                      <li
+                        aria-hidden="true"
+                        className="pt-1 font-medium text-[11px] text-zinc-400 dark:text-zinc-500 tracking-wider"
+                      >
+                        {hourLabel(entry.createdAt)}
+                        {` · ${hourCounts.get(key)} ${hourCounts.get(key) === 1 ? "request" : "requests"}`}
+                      </li>
+                    )}
+                    <FuelRequestItem
+                      request={entry}
+                      myTruck={myTruck}
+                      myFueler={myFueler}
+                      onUpdate={handleUpdate}
+                    />
+                  </Fragment>
+                );
+              })}
+            </ul>
+          </>
         )}
       </div>
     </div>
