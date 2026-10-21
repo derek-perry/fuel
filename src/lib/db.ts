@@ -153,11 +153,45 @@ export function getLiveRequests(): FuelRequestRecord[] {
   return rows.map(rowToRecord);
 }
 
-export function getHistory(limit = 200): FuelRequestRecord[] {
+// `from` inclusive, `to` exclusive; both are ISO-8601 UTC strings, which compare correctly against
+// the stored completed_at values (always written via toISOString()).
+export function getHistoryBetween(from: string, to: string): FuelRequestRecord[] {
   const rows = db
-    .prepare(`SELECT ${RECORD_COLUMNS} FROM requests WHERE completed_at IS NOT NULL ORDER BY completed_at DESC LIMIT ?`)
-    .all(limit) as RequestRow[];
+    .prepare(
+      `SELECT ${RECORD_COLUMNS} FROM requests
+       WHERE completed_at IS NOT NULL AND completed_at >= ? AND completed_at < ?
+       ORDER BY completed_at DESC`
+    )
+    .all(from, to) as RequestRow[];
   return rows.map(rowToRecord);
+}
+
+export interface HistoryDay {
+  day: string;
+  count: number;
+}
+
+// Lists every day (in the caller's timezone) that has completed requests, newest first, without
+// transferring the requests themselves.
+export function getHistoryDays(timeZone: string): HistoryDay[] {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const rows = db
+    .prepare(`SELECT completed_at FROM requests WHERE completed_at IS NOT NULL`)
+    .all() as { completed_at: string }[];
+
+  const counts = new Map<string, number>();
+  for (const { completed_at: completedAt } of rows) {
+    const day = formatter.format(new Date(completedAt));
+    counts.set(day, (counts.get(day) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([day, count]) => ({ day, count }))
+    .sort((a, b) => (a.day < b.day ? 1 : -1));
 }
 
 export function getRequestRecord(requestId: number): FuelRequestRecord | null {

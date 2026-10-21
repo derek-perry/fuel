@@ -1,14 +1,13 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import FuelRequestItem from "@/components/FuelRequestItem";
 import SortToggle, { sortByCreatedAt, type SortOrder } from "@/components/SortToggle";
 import { parseErauDate } from "@/lib/formatTime";
-import type { FuelRequestRecord } from "@/types/fuelRequest";
+import { dayKeyFromDate, useFuelRequestHistoryDay, useFuelRequestHistoryDays } from "@/lib/history";
 import type { RequestPatch } from "@/lib/requestActions";
 
 interface HistoryModalProps {
-  history: FuelRequestRecord[];
   myTruck: string | null;
   myFueler: string | null;
   onUpdate: (requestId: number, patch: RequestPatch) => Promise<void>;
@@ -17,11 +16,6 @@ interface HistoryModalProps {
 
 // Beyond this many distinct days, a button row would wrap excessively — switch to a dropdown.
 const MAX_DAY_BUTTONS = 6;
-
-// Local (not UTC) day key so entries group by the day the user actually sees them completed on.
-function dayKeyFromDate(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
 
 function dayKey(value: string): string {
   const date = parseErauDate(value);
@@ -53,21 +47,28 @@ function hourLabel(value: string): string {
   return `${String(date.getHours()).padStart(2, "0")}00`;
 }
 
-export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onClose }: HistoryModalProps) {
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+export default function HistoryModal({ myTruck, myFueler, onUpdate, onClose }: HistoryModalProps) {
+  const today = dayKeyFromDate(new Date());
+  const [selectedDay, setSelectedDay] = useState<string>(today);
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
 
+  const { days: serverDays } = useFuelRequestHistoryDays();
+  // Today is always selectable, even before anything has completed today.
   const days = useMemo(() => {
-    const keys = new Set(history.map((entry) => dayKey(entry.completedAt ?? entry.createdAt)));
+    const keys = new Set([today, ...(serverDays ?? []).map((entry) => entry.day)]);
     return [...keys].sort((a, b) => (a < b ? 1 : -1));
-  }, [history]);
+  }, [serverDays, today]);
 
-  const visibleHistory = useMemo(() => {
-    const filtered = selectedDay
-      ? history.filter((entry) => dayKey(entry.completedAt ?? entry.createdAt) === selectedDay)
-      : history;
-    return sortByCreatedAt(filtered, sortOrder);
-  }, [history, selectedDay, sortOrder]);
+  const { history, isLoading, mutate: mutateDay } = useFuelRequestHistoryDay(selectedDay);
+  const visibleHistory = useMemo(() => sortByCreatedAt(history ?? [], sortOrder), [history, sortOrder]);
+
+  const handleUpdate = useCallback(
+    async (requestId: number, patch: RequestPatch) => {
+      await onUpdate(requestId, patch);
+      await mutateDay();
+    },
+    [onUpdate, mutateDay]
+  );
 
   const hourCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -102,11 +103,11 @@ export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onC
         {days.length > 1 && (
           days.length > MAX_DAY_BUTTONS ? (
             <select
-              value={selectedDay ?? "all"}
-              onChange={(event) => setSelectedDay(event.target.value === "all" ? null : event.target.value)}
+              value={selectedDay}
+              onChange={(event) => setSelectedDay(event.target.value)}
+              aria-label="Day"
               className="bg-white dark:bg-zinc-800 px-2.5 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded-md w-fit font-medium text-zinc-600 dark:text-zinc-300 text-xs cursor-pointer"
             >
-              <option value="all">All days</option>
               {days.map((key) => (
                 <option key={key} value={key}>
                   {dayLabel(key)}
@@ -115,17 +116,6 @@ export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onC
             </select>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedDay(null)}
-                className={`px-2.5 py-1 rounded-md border text-xs font-medium cursor-pointer ${
-                  selectedDay === null
-                    ? "bg-zinc-900 dark:bg-zinc-100 border-zinc-900 dark:border-zinc-100 text-white dark:text-zinc-900"
-                    : "bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                }`}
-              >
-                All
-              </button>
               {days.map((key) => (
                 <button
                   key={key}
@@ -148,8 +138,10 @@ export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onC
           <SortToggle order={sortOrder} onChange={setSortOrder} className="self-start text-xs" />
         )}
 
-        {visibleHistory.length === 0 ? (
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">No completed requests yet.</p>
+        {isLoading ? (
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm">Loading…</p>
+        ) : visibleHistory.length === 0 ? (
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm">No completed requests {selectedDay === today ? "yet today" : "this day"}.</p>
         ) : (
           <ul className="space-y-3">
             {visibleHistory.map((entry, index) => {
@@ -162,7 +154,6 @@ export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onC
                       aria-hidden="true"
                       className="pt-1 font-medium text-[11px] text-zinc-400 dark:text-zinc-500 tracking-wider"
                     >
-                      {selectedDay ? "" : `${dayLabel(dayKey(entry.createdAt))} · `}
                       {hourLabel(entry.createdAt)}
                       {` · ${hourCounts.get(key)} ${hourCounts.get(key) === 1 ? "request" : "requests"}`}
                     </li>
@@ -171,7 +162,7 @@ export default function HistoryModal({ history, myTruck, myFueler, onUpdate, onC
                     request={entry}
                     myTruck={myTruck}
                     myFueler={myFueler}
-                    onUpdate={onUpdate}
+                    onUpdate={handleUpdate}
                   />
                 </Fragment>
               );

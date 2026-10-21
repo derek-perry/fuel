@@ -10,7 +10,6 @@ import ThemeToggle from "@/components/ThemeToggle";
 import IdentityModal from "@/components/IdentityModal";
 import SortToggle, { sortByCreatedAt, type SortOrder } from "@/components/SortToggle";
 import { fetcher } from "@/lib/fetcher";
-import { useFuelRequestHistory } from "@/lib/history";
 import { findTruck, type Identity } from "@/lib/identity";
 import { patchRequest, type RequestPatch } from "@/lib/requestActions";
 import { useSoundEnabled } from "@/lib/soundPreference";
@@ -59,14 +58,12 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
   const { soundEnabled, setSoundEnabled } = useSoundEnabled();
   useNewRequestSound(data?.requests, soundEnabled);
 
-  const { history, mutate: mutateHistory } = useFuelRequestHistory();
-
   const handleUpdate = useCallback(
     async (requestId: number, patch: RequestPatch) => {
       await patchRequest(requestId, patch);
-      await Promise.all([mutate(), mutateHistory()]);
+      await mutate();
     },
-    [mutate, mutateHistory]
+    [mutate]
   );
 
   return (
@@ -136,7 +133,6 @@ export default function FuelRequestsBoard({ onAccessLost, identity }: FuelReques
 
       {showHistory && (
         <HistoryModal
-          history={history}
           myTruck={myTruck}
           myFueler={myFueler}
           onUpdate={handleUpdate}
