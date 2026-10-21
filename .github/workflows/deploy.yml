@@ -23,8 +23,9 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/fuel
-            echo "Pulling latest changes (keeping server-side roster edits)..."
-            git pull --ff-only --autostash
+            echo "Syncing to origin/main (repo overwrites any server-side changes)..."
+            git fetch origin main
+            git reset --hard origin/main
             echo "Installing dependencies..."
             npm install
             echo "Building..."
